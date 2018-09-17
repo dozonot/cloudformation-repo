@@ -1,0 +1,7 @@
+Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL:
+      TimeoutInMinutes:
+

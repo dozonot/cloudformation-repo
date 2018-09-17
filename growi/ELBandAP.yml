@@ -1,0 +1,138 @@
+Description:
+  This template deploys a VPC.
+
+Resources:
+  ELBSecurityGroup: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription     : SecurityGroup for ELB Servers.
+      SecurityGroupIngress :
+      - IpProtocol            : tcp
+        FromPort              : '80'
+        ToPort                : '80'
+        CidrIp                : 0.0.0.0/0
+      VpcId                : !ImportValue GROWIVPC
+  APSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription     : SecurityGroup for AP Servers.
+      SecurityGroupIngress :
+      - IpProtocol            : tcp
+        FromPort              : '3000'
+        ToPort                : '3000'
+        SourceSecurityGroupId : !Ref ELBSecurityGroup
+      - IpProtocol            : tcp
+        FromPort              : '22'
+        ToPort                : '22'
+        CidrIp                : 0.0.0.0/0
+      VpcId                : !ImportValue GROWIVPC
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription     : SecurityGroup for DB Servers.
+      SecurityGroupIngress :
+      - IpProtocol            : tcp
+        FromPort              : '27017'
+        ToPort                : '27017'
+        SourceSecurityGroupId : !Ref APSecurityGroup
+      VpcId                : !ImportValue GROWIVPC
+  FrontELB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      CrossZone      : true
+      HealthCheck    :
+        Target            :
+          Fn::Join:
+          - ''
+          - - 'HTTP:'
+            - !Ref APServerPort
+            - "/"
+        Interval           : 10
+        Timeout            : 5
+        HealthyThreshold   : 2
+        UnhealthyThreshold : 5
+      Listeners      :
+        - InstancePort     : !Ref APServerPort
+          InstanceProtocol : HTTP
+          LoadBalancerPort : 80
+          Protocol         : HTTP
+      Scheme         : internet-facing
+      SecurityGroups :
+        - !Ref ELBSecurityGroup
+      Subnets        :
+        - !ImportValue GROWIPrivateSubnet1
+        - !ImportValue GROWIPrivateSubnet2
+  LaunchConfiguration: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-as-launchconfig.html
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress : false
+      ImageId                  : !Ref EC2InstanceAMI
+      InstanceMonitoring       : false
+      InstanceType             : t2.micro
+      KeyName                  : !Ref KeyName
+      SecurityGroups           :
+        - !Ref APSecurityGroup
+      SpotPrice                : "0.50"
+      UserData                 :
+        Fn::Base64:
+          !Sub |
+          #!/bin/bash
+          yum update -y
+          cd /opt/
+          curl -sL https://rpm.nodesource.com/setup_8.x | sudo bash -
+          yum install -y nodejs
+          npm install -g yarn
+          yum install -y git
+          git clone https://github.com/weseek/growi.git
+          cd growi
+          yarn
+          yarn add growi-plugin-lsx
+          yarn add growi-plugin-pukiwiki-like-linker
+          cat << 'EOF' | tee /etc/systemd/system/growi.service
+          [Unit]
+          Description=GROWI
+          After=network.target
+          [Service]
+          WorkingDirectory=/opt/growi
+          EnvironmentFile=/etc/systemd/system/growi.conf
+          ExecStart=/usr/bin/npm start
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          cat << 'EOF' | tee  /etc/systemd/system/growi.conf
+          PORT=3000
+          MONGO_URI="mongodb://growi:aabbccddaabbccdd@localhost/growi"
+          ELASTICSEARCH_URI="http://localhost:9200"
+          EOF
+          systemctl daemon-reload
+          systemctl enable growi
+          systemctl start growi
+
+  AutoScalingGroup: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-as-group.html
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier       :
+        - !ImportValue GROWIPrivateSubnet1
+        - !ImportValue GROWIPrivateSubnet2
+      HealthCheckType         : ELB
+      HealthCheckGracePeriod  : 10
+      LaunchConfigurationName : !Ref LaunchConfiguration
+      LoadBalancerNames       :
+        - !Ref FrontELB
+      MaxSize                 : 2
+      DesiredCapacity         : 2
+      MinSize                 : 2
+
+Parameters:
+  EC2InstanceAMI:
+    Type        : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default     : "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  KeyName:
+    Description : The EC2 Key Pair to allow SSH access to the instance.
+    Type        : 'AWS::EC2::KeyPair::KeyName'
+  APServerPort:
+    Description : AP Server lisnten port.
+    Type        : Number
+    Default     : 3000
+    MinValue    : 1
+    MaxValue    : 65535

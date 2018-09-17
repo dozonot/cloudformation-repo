@@ -129,3 +129,17 @@ Resources:
     Properties:
       RouteTableId: !Ref PrivateRouteTable2
       SubnetId: !Ref PrivateSubnet2
+
+Outputs:
+  GROWIVPC:
+    Value: !Ref VPC
+    Export:
+      Name: GROWIVPC
+  GROWIPrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: GROWIPrivateSubnet1
+  GROWIPrivateSubnet2:
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: GROWIPrivateSubnet2
