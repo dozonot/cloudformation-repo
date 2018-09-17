@@ -1,0 +1,70 @@
+Resources:
+  ElasticLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
+    Properties:
+      AvailabilityZones: !GetAZs ''
+      Instances:
+        - !Ref Ec2Instance1
+        - !Ref Ec2Instance2
+      Listeners:
+        - LoadBalancerPort: '80'
+          InstancePort: !Ref WebServerPort
+          Protocol: HTTP
+      HealthCheck:
+        Target: !Join
+          - ''
+          - - 'HTTP:'
+            - !Ref WebServerPort
+            - /
+        HealthyThreshold  : '3'
+        UnhealthyThreshold: '5'
+        Interval          : '30'
+        Timeout           : '5'
+  Ec2Instance1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      KeyName: !Ref KeyName
+      ImageId: !Ref EC2InstanceAMI
+  Ec2Instance2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      KeyName: !Ref KeyName
+      ImageId: !Ref EC2InstanceAMI
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH access via port 22 and HTTP access via port 80
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+
+Parameters:
+  EC2InstanceAMI:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instance.
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  WebServerPort:
+    Description: TCP/IP port for the WordPress web server
+    Default: 80
+    Type: Number
+    MinValue: 1
+    MaxValue: 65535
+
+Outputs:
+  InstallURL:
+    Value: !Join
+      - ''
+      - - 'http://'
+        - !GetAtt ElasticLoadBalancer.DNSName
