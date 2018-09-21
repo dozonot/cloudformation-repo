@@ -1,0 +1,201 @@
+Description:
+  This template deploys a VPC.
+Resources:
+  VPC: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock          : 10.0.0.0/16
+      EnableDnsSupport   : true
+      EnableDnsHostnames : true
+      InstanceTenancy    : default
+  InternetGateway: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-internetgateway.html
+    Type: AWS::EC2::InternetGateway
+  InternetGatewayAttachment: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc-gateway-attachment.html
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId : !Ref InternetGateway
+      VpcId             : !Ref VPC
+  PublicSubnet1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock           : 10.0.0.0/24
+      MapPublicIpOnLaunch : true
+      VpcId               : !Ref VPC
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock           : 10.0.1.0/24
+      MapPublicIpOnLaunch : true
+      VpcId               : !Ref VPC
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 2
+          - Fn::GetAZs: ""
+      CidrBlock           : 10.0.2.0/24
+      MapPublicIpOnLaunch : true
+      VpcId               : !Ref VPC
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock           : 10.0.3.0/24
+      VpcId               : !Ref VPC
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock           : 10.0.4.0/24
+      VpcId               : !Ref VPC
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 2
+          - Fn::GetAZs: ""
+      CidrBlock           : 10.0.5.0/24
+      VpcId               : !Ref VPC
+  ElasticIP1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref VPC
+  ElasticIP2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref VPC
+  ElasticIP3:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref VPC
+  NatGateway1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-natgateway.html
+    Type: AWS::EC2::NatGateway
+    DependsOn: InternetGateway
+    Properties:
+      AllocationId : 
+        Fn::GetAtt:
+          - ElasticIP1
+          - AllocationId
+      SubnetId     : !Ref PublicSubnet1
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    DependsOn: InternetGateway
+    Properties:
+      AllocationId : 
+        Fn::GetAtt:
+          - ElasticIP2
+          - AllocationId
+      SubnetId     : !Ref PublicSubnet2
+  NatGateway3:
+    Type: AWS::EC2::NatGateway
+    DependsOn: InternetGateway
+    Properties:
+      AllocationId : 
+        Fn::GetAtt:
+          - ElasticIP3
+          - AllocationId
+      SubnetId     : !Ref PublicSubnet3
+  PublicRouteTable: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route-table.html
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId : !Ref VPC
+  PublicRoute: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock : 0.0.0.0/0
+      GatewayId            : !Ref InternetGateway
+      RouteTableId         : !Ref PublicRouteTable
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId : !Ref VPC
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId : !Ref VPC
+  PrivateRouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId : !Ref VPC
+  PrivateRoute1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock : 0.0.0.0/0
+      NatGatewayId         : !Ref NatGateway1
+      RouteTableId         : !Ref PrivateRouteTable1
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock : 0.0.0.0/0
+      NatGatewayId         : !Ref NatGateway2
+      RouteTableId         : !Ref PrivateRouteTable2
+  PrivateRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock : 0.0.0.0/0
+      NatGatewayId         : !Ref NatGateway3
+      RouteTableId         : !Ref PrivateRouteTable3
+  PublicSubnet1RouteTableAssociation: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+  PublicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet3
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+  PrivateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable3
+      SubnetId: !Ref PrivateSubnet3
+
+Outputs:
+  GROWIVPC:
+    Value: !Ref VPC
+    Export:
+      Name: GROWIVPC
+  GROWIPrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: GROWIPrivateSubnet1
+  GROWIPrivateSubnet2:
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: GROWIPrivateSubnet2
+  GROWIPrivateSubnet3:
+    Value: !Ref PrivateSubnet3
+    Export:
+      Name: GROWIPrivateSubnet3
