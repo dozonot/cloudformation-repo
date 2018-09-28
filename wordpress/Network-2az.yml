@@ -1,0 +1,182 @@
+Description:
+  This template deploys a VPC.
+Resources:
+  VPC: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock          : !Ref VPCCIDR
+      EnableDnsSupport   : true
+      EnableDnsHostnames : true
+      InstanceTenancy    : default
+  InternetGateway: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-internetgateway.html
+    Type: AWS::EC2::InternetGateway
+  InternetGatewayAttachment: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc-gateway-attachment.html
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId : !Ref InternetGateway
+      VpcId             : !Ref VPC
+  PublicSubnet1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock           : !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch : true
+      VpcId               : !Ref VPC
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock           : !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch : true
+      VpcId               : !Ref VPC
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock           : !Ref PrivateSubnet1CIDR
+      VpcId               : !Ref VPC
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock           : !Ref PrivateSubnet2CIDR
+      VpcId               : !Ref VPC
+  ElasticIP1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref VPC
+  ElasticIP2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref VPC
+  NatGateway1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-natgateway.html
+    Type: AWS::EC2::NatGateway
+    DependsOn: InternetGateway
+    Properties:
+      AllocationId : 
+        Fn::GetAtt:
+          - ElasticIP1
+          - AllocationId
+      SubnetId     : !Ref PublicSubnet1
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    DependsOn: InternetGateway
+    Properties:
+      AllocationId : 
+        Fn::GetAtt:
+          - ElasticIP2
+          - AllocationId
+      SubnetId     : !Ref PublicSubnet2
+  PublicRouteTable: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route-table.html
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId : !Ref VPC
+  PublicRoute: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock : 0.0.0.0/0
+      GatewayId            : !Ref InternetGateway
+      RouteTableId         : !Ref PublicRouteTable
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId : !Ref VPC
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId : !Ref VPC
+  PrivateRoute1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock : 0.0.0.0/0
+      NatGatewayId         : !Ref NatGateway1
+      RouteTableId         : !Ref PrivateRouteTable1
+  PrivateRoute2: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock : 0.0.0.0/0
+      NatGatewayId         : !Ref NatGateway2
+      RouteTableId         : !Ref PrivateRouteTable2
+  PublicSubnet1RouteTableAssociation: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+Parameters:
+  VPCCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Description: CIDR block for VPC.
+  PublicSubnet1CIDR:
+    Type: String
+    Default: 10.0.0.0/24
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Description: CIDR block for Public subnet 1.
+  PublicSubnet2CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Description: CIDR block for Public subnet 2.
+  PrivateSubnet1CIDR:
+    Type: String
+    Default: 10.0.2.0/24
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Description: CIDR block for Private subnet 1.
+  PrivateSubnet2CIDR:
+    Type: String
+    Default: 10.0.3.0/24
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Description: CIDR block for Private subnet 2.
+
+Outputs:
+  WordPressVPC:
+    Value: !Ref VPC
+    Export:
+      Name: WordPressVPC
+  WordPressPrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: WordPressPrivateSubnet1
+  WordPressPrivateSubnet2:
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: WordPressPrivateSubnet2
