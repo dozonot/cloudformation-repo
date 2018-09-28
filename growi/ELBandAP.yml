@@ -1,5 +1,5 @@
 Description:
-  This template deploys a VPC.
+  This template deploys a ELB and AP Servers.
 
 Resources:
   ELBSecurityGroup: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
