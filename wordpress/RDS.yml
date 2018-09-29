@@ -1,6 +1,5 @@
 Description:
-  This template builds for WordPress..
-Metadata:
+  This template builds RDS for WordPress
 Resources:
 Parameters:
 Mappings:

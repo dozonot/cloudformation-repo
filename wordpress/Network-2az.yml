@@ -1,5 +1,5 @@
 Description:
-  This template deploys a VPC.
+  This template deploys a VPC for WordPress.
 Resources:
   VPC: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
     Type: AWS::EC2::VPC
