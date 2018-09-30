@@ -1,6 +1,40 @@
 Description:
-Metadata:
+  This template wraps WordPress templates.
 Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Network-2az.yml
+    #  Parameters  :
+  Security:
+    Type: AWS::CloudFormation::Stack
+    Properties :
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Security.yml
+    DependsOn  : Network
+    #  Parameters  :
 Parameters:
-Mappings:
-Outputs:
+  RDSInstanceClass:
+    Type          : String
+    Default       : db.t2.small
+    AllowedValues :
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+      - db.t2.large
+      - db.t2.xlarge
+      - db.t2.2xlarge
+    Description   : Select RDS instance class.
+  RDSMasterUser:
+    Type           : String
+    Default        : admin
+    MinLength      : 1
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[a-z]+'
+  RDSMasterPassword :
+    Type           : String
+    Default        : password
+    MinLength      : 8
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[^\/@"]+'

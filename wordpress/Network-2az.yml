@@ -170,21 +170,11 @@ Parameters:
 Outputs:
   WordPressVPC:
     Value: !Ref VPC
-    Export:
-      Name: WordPressVPC
   WordPressPrivateSubnet1:
     Value: !Ref PrivateSubnet1
-    Export:
-      Name: WordPressPrivateSubnet1
   WordPressPrivateSubnet2:
     Value: !Ref PrivateSubnet2
-    Export:
-      Name: WordPressPrivateSubnet2
   WordPressPublicSubnet1:
     Value: !Ref PublicSubnet1
-    Export:
-      Name: WordPressPublicSubnet1
   WordPressPublicSubnet2:
     Value: !Ref PublicSubnet2
-    Export:
-      Name: WordPressPublicSubnet2

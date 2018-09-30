@@ -1,6 +1,42 @@
 Description:
   This template builds RDS for WordPress
 Resources:
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "SubnetGroup for WordPress"
+      SubnetIds:
+        - !ImportValue WordPressPrivateSubnet1
+        - !ImportValue WordPressPrivateSubnet2
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage   : 20
+      DBInstanceClass    : !Ref RDSInstanceClass
+      DBSubnetGroupName  : !Ref RDSSubnetGroup
+      DBName             : wordpress
+      Engine             : MySQL
+      MasterUsername     : !Ref RDSMasterUser
+      MasterUserPassword : !Ref RDSMasterPassword
+      MonitoringInterval : 0
+      MultiAZ            : true
+      Port               : 3306
+      PubliclyAccessible : false
+      StorageType        : gp2
+      VPCSecurityGroups  :
+        - !ImportValue DBSecurityGroup
 Parameters:
-Mappings:
+  RDSInstanceClass:
+    Type: 
+  RDSMasterUser:
+    Type: 
+  RDSMasterPassword:
+    Type: 
 Outputs:
+  RDSEndpoint:
+    Value:
+      Fn::GetAtt:
+        - RDSInstance
+        - Endpoint.Address
+    Export:
+      Name: RDSEndpoint
