@@ -6,15 +6,15 @@ Resources:
     Properties:
       DBSubnetGroupDescription: "SubnetGroup for WordPress"
       SubnetIds:
-        - !ImportValue WordPressPrivateSubnet1
-        - !ImportValue WordPressPrivateSubnet2
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
   RDSInstance:
     Type: AWS::RDS::DBInstance
     Properties:
       AllocatedStorage   : 20
       DBInstanceClass    : !Ref RDSInstanceClass
       DBSubnetGroupName  : !Ref RDSSubnetGroup
-      DBName             : wordpress
+      DBName             : !Ref RDSDBName
       Engine             : MySQL
       MasterUsername     : !Ref RDSMasterUser
       MasterUserPassword : !Ref RDSMasterPassword
@@ -24,19 +24,25 @@ Resources:
       PubliclyAccessible : false
       StorageType        : gp2
       VPCSecurityGroups  :
-        - !ImportValue DBSecurityGroup
+        - !Ref DBSecurityGroup
 Parameters:
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
   RDSInstanceClass:
-    Type: 
+    Type: String
+  RDSDBName:
+    Type: String
   RDSMasterUser:
-    Type: 
+    Type: String
   RDSMasterPassword:
-    Type: 
+    Type: String
+  DBSecurityGroup:
+    Type: String
 Outputs:
   RDSEndpoint:
     Value:
       Fn::GetAtt:
         - RDSInstance
         - Endpoint.Address
-    Export:
-      Name: RDSEndpoint

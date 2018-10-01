@@ -14,8 +14,7 @@ Resources:
         FromPort              : '443'
         ToPort                : '443'
         CidrIp                : 0.0.0.0/0
-      VpcId                : !ImportValue WordPressVPC
-      VpcId                : !GetAtt Network.Outputs.
+      VpcId                : !Ref WordPressVPC
   APSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -25,8 +24,7 @@ Resources:
         FromPort              : '80'
         ToPort                : '80'
         SourceSecurityGroupId : !Ref ELBSecurityGroup
-      VpcId                : !Ref VPC
-#       VpcId                : !ImportValue WordPressVPC
+      VpcId                : !Ref WordPressVPC
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -36,18 +34,14 @@ Resources:
         FromPort              : '3306'
         ToPort                : '3306'
         SourceSecurityGroupId : !Ref APSecurityGroup
-      VpcId                : !Ref VPC
-#       VpcId                : !ImportValue WordPressVPC
-# Outputs:
-#   ELBSecurityGroup:
-#     Value: !Ref ELBSecurityGroup
-#     Export:
-#       Name: ELBSecurityGroup
-#   APSecurityGroup:
-#     Value: !Ref APSecurityGroup
-#     Export:
-#       Name: APSecurityGroup
-#   DBSecurityGroup:
-#     Value: !Ref DBSecurityGroup
-#     Export:
-#       Name: DBSecurityGroup
+      VpcId                : !Ref WordPressVPC
+Parameters:
+  WordPressVPC:
+    Type: "String"
+Outputs:
+  ELBSecurityGroup:
+    Value: !Ref ELBSecurityGroup
+  APSecurityGroup:
+    Value: !Ref APSecurityGroup
+  DBSecurityGroup:
+    Value: !Ref DBSecurityGroup
