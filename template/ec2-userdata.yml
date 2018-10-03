@@ -1,0 +1,140 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      Comment: Install a simple PHP application
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+              php: []
+              php-mysql: []
+              php-mbstring: []
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub '[main]
+
+                stack=${AWS::StackId}
+
+                region=${AWS::Region}
+
+                '
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub '[cfn-auto-reloader-hook]
+
+                triggers=post.update
+
+                path=Resources.WebServerInstance.Metadata.AWS::CloudFormation::Init
+
+                action=/opt/aws/bin/cfn-init -s ${AWS::StackId} -r WebServerInstance --region ${AWS::Region}
+
+                runas=root
+
+                '
+          services:
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+          commands:
+            command1:
+              command: "curl -LO https://ja.wordpress.org/latest-ja.tar.gz"
+              cwd: "/tmp"
+            command2:
+              command: "tar zxvf latest-ja.tar.gz"
+              cwd: "/tmp"
+            command3:
+              command: "cp -Rp * /var/www/html/"
+              cwd: "/tmp/wordpress"
+            command4:
+              command: "chown -R apache.apache /var/www/html"
+              cwd: "/tmp"
+            command5:
+              command: "cp -p wp-config-sample.php wp-config.php"
+              cwd: "/var/www/html/"
+            command6:
+              command: "sed -i -e s/database_name_here/${RDSDBName}/g wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSDBName: !Ref RDSDBName
+            command7:
+              command: "sed -i -e s/username_here/${RDSMasterUser}/g /var/www/html/wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSMasterUser: !Ref RDSMasterUser
+            command8:
+              command: "sed -i -e s/password_here/${RDSMasterPassword}/g /var/www/html/wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSMasterPassword: !Ref RDSMasterPassword
+            command9:
+              command: "sed -i -e s/localhost/${RDSEndpoint}/g /var/www/html/wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSEndpoint: !Ref RDSEndpoint
+    Properties:
+      ImageId: ami-04681a1dbd79675a5
+      InstanceType: t2.micro
+      KeyName     : mykey
+      SecurityGroups:
+        - !Ref 'WebServerSecurityGroup'
+      UserData: !Base64
+        Fn::Sub: '#!/bin/bash -xe
+
+          yum install -y aws-cfn-bootstrap
+
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource WebServerInstance --region ${AWS::Region}
+
+          /opt/aws/bin/cfn-hup || error_exit ''Failed to start cfn-hup''
+
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebServerInstance --region ${AWS::Region}
+
+          '
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP access via port 80
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+Parameters:
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro
+  RDSDBName:
+    Type: String
+    Default: wordpress
+  RDSMasterUser:
+    Type: String
+    Default: admin
+  RDSMasterPassword:
+    Type: String
+    Default: password
+  RDSEndpoint:
+    Type: String
+    Default: rds.amazonaws.com
+Outputs:
+  WebsiteURL:
+    Description: Application URL
+    Value: !Sub 'http://${WebServerInstance.PublicDnsName}'

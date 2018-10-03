@@ -22,61 +22,30 @@ Resources:
     Properties :
       TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/RDS.yml
       Parameters  :
-        RDSInstanceClass  : !Ref RDSInstanceClass
-        RDSMasterUser     : !Ref RDSMasterUser
-        RDSMasterPassword : !Ref RDSMasterPassword
-        DBSecurityGroup   : !GetAtt Security.Outputs.DBSecurityGroup
         PrivateSubnet1    : !GetAtt Network.Outputs.WordPressPrivateSubnet1
         PrivateSubnet2    : !GetAtt Network.Outputs.WordPressPrivateSubnet2
+        DBSecurityGroup   : !GetAtt Security.Outputs.DBSecurityGroup
+        RDSInstanceClass  : !Ref RDSInstanceClass
+        RDSDBName         : !Ref RDSDBName
+        RDSMasterUser     : !Ref RDSMasterUser
+        RDSMasterPassword : !Ref RDSMasterPassword
   AP:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/AP.yml
       Parameters  :
-        KeyName           : !Ref KeyName
-        ELBSecurityGroup  : !GetAtt Security.Outputs.ELBSecurityGroup
-        APSecurityGroup   : !GetAtt Security.Outputs.APSecurityGroup
         PublicSubnet1     : !GetAtt Network.Outputs.WordPressPublicSubnet1
         PublicSubnet2     : !GetAtt Network.Outputs.WordPressPublicSubnet2
         PrivateSubnet1    : !GetAtt Network.Outputs.WordPressPrivateSubnet1
         PrivateSubnet2    : !GetAtt Network.Outputs.WordPressPrivateSubnet2
+        ELBSecurityGroup  : !GetAtt Security.Outputs.ELBSecurityGroup
+        APSecurityGroup   : !GetAtt Security.Outputs.APSecurityGroup
+        RDSEndpoint       : !GetAtt RDS.Outputs.RDSEndpoint
         RDSDBName         : !Ref RDSDBName
         RDSMasterUser     : !Ref RDSMasterUser
         RDSMasterPassword : !Ref RDSMasterPassword
-        RDSEndpoint       : !GetAtt RDS.Outputs.RDSEndpoint
+        KeyName           : !Ref KeyName
 Parameters:
-  RDSInstanceClass:
-    Type          : String
-    Default       : db.t2.small
-    AllowedValues :
-      - db.t2.micro
-      - db.t2.small
-      - db.t2.medium
-      - db.t2.large
-      - db.t2.xlarge
-      - db.t2.2xlarge
-    Description   : Select RDS instance class.
-  RDSDBName:
-    Type           : String
-    Default        : wordpress
-    MinLength      : 1
-    MaxLength      : 16
-    NoEcho         : true
-    AllowedPattern : '[a-z]+'
-  RDSMasterUser:
-    Type           : String
-    Default        : admin
-    MinLength      : 1
-    MaxLength      : 16
-    NoEcho         : true
-    AllowedPattern : '[a-z]+'
-  RDSMasterPassword :
-    Type           : String
-    Default        : password
-    MinLength      : 8
-    MaxLength      : 16
-    NoEcho         : true
-    AllowedPattern : '[^\/@"]+'
   VPCCIDR:
     Type: String
     Default: 10.0.0.0/16
@@ -112,6 +81,50 @@ Parameters:
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Description: CIDR block for Private subnet 2.
+  RDSInstanceClass:
+    Type          : String
+    Default       : db.t2.small
+    AllowedValues :
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+      - db.t2.large
+      - db.t2.xlarge
+      - db.t2.2xlarge
+      - db.m5.large
+      - db.m5.xlarge
+      - db.m5.2xlarge
+      - db.m5.4xlarge
+      - db.m5.12xlarge
+      - db.m5.24xlarge
+      - db.r4.large
+      - db.r4.xlarge
+      - db.r4.2xlarge
+      - db.r4.4xlarge
+      - db.r4.8xlarge
+      - db.r4.16xlarge
+    Description   : Select RDS instance class.
+  RDSDBName:
+    Type           : String
+    Default        : wordpress
+    MinLength      : 1
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[a-z]+'
+  RDSMasterUser:
+    Type           : String
+    Default        : admin
+    MinLength      : 1
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[a-z]+'
+  RDSMasterPassword :
+    Type           : String
+    Default        : password
+    MinLength      : 8
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[^\/@"]+'
   KeyName:
     Description : The EC2 Key Pair to allow SSH access to the instance.
     Type        : 'AWS::EC2::KeyPair::KeyName'

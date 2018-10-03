@@ -1,21 +1,21 @@
 Description:
   This template deploys a VPC for WordPress.
 Resources:
-  VPC: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
+  VPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock          : !Ref VPCCIDR
       EnableDnsSupport   : true
       EnableDnsHostnames : true
       InstanceTenancy    : default
-  InternetGateway: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-internetgateway.html
+  InternetGateway:
     Type: AWS::EC2::InternetGateway
-  InternetGatewayAttachment: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc-gateway-attachment.html
+  InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       InternetGatewayId : !Ref InternetGateway
       VpcId             : !Ref VPC
-  PublicSubnet1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
+  PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone:

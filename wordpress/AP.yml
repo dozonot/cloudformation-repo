@@ -1,0 +1,171 @@
+Description:
+  This template biulds Auto Scaling for WordPress.
+Resources:
+  FrontELB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      CrossZone      : true
+      HealthCheck    :
+        Target            :
+          Fn::Join:
+          - ''
+          - - 'HTTP:'
+            - 80
+            - "/hc.html"
+        Interval           : 10
+        Timeout            : 5
+        HealthyThreshold   : 2
+        UnhealthyThreshold : 5
+      Listeners      :
+        - InstancePort     : 80
+          InstanceProtocol : HTTP
+          LoadBalancerPort : 80
+          Protocol         : HTTP
+      Scheme         : internet-facing
+      SecurityGroups :
+        - !Ref ELBSecurityGroup
+      Subnets        :
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      Comment: Install a simple PHP application
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+              php: []
+              php-mysql: []
+              php-mbstring: []
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.WebServerInstance.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -s ${AWS::StackId} -r WebServerInstance --region ${AWS::Region}
+                runas=root
+          services:
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+          commands:
+            command1:
+              command: "curl -LO https://ja.wordpress.org/latest-ja.tar.gz && tar zxvf latest-ja.tar.gz"
+              cwd: "/tmp"
+            command2:
+              command: "cp -Rp * /var/www/html/"
+              cwd: "/tmp/wordpress"
+            command3:
+              command: "chown -R apache.apache /var/www/html"
+              cwd: "/tmp"
+            command4:
+              command: "cp -p wp-config-sample.php wp-config.php"
+              cwd: "/var/www/html/"
+            command5:
+              command: "sed -i -e s/database_name_here/${RDSDBName}/g wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSDBName: !Ref RDSDBName
+            command6:
+              command: "sed -i -e s/username_here/${RDSMasterUser}/g /var/www/html/wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSMasterUser: !Ref RDSMasterUser
+            command7:
+              command: "sed -i -e s/password_here/${RDSMasterPassword}/g /var/www/html/wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSMasterPassword: !Ref RDSMasterPassword
+            command8:
+              command: "sed -i -e s/localhost/${RDSEndpoint}/g /var/www/html/wp-config.php"
+              cwd: "/var/www/html/"
+              env:
+                RDSEndpoint: !Ref RDSEndpoint
+            command9:
+              command: "touch hc.html && chown apache.apache hc.html"
+              cwd: "/var/www/html/"
+    Properties:
+      AssociatePublicIpAddress : false
+      ImageId                  : !Ref EC2InstanceAMI
+      InstanceMonitoring       : false
+      InstanceType             : t2.micro
+      KeyName                  : !Ref KeyName
+      SecurityGroups           :
+        - !Ref APSecurityGroup
+      SpotPrice                : "0.50"
+      UserData: !Base64
+        Fn::Sub: |
+          #!/bin/bash -xe
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-hup || error_exit ''Failed to start cfn-hup''
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier       :
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      HealthCheckType         : ELB
+      HealthCheckGracePeriod  : 10
+      LaunchConfigurationName : !Ref LaunchConfiguration
+      LoadBalancerNames       :
+        - !Ref FrontELB
+      MaxSize                 : 2
+      DesiredCapacity         : 2
+      MinSize                 : 2
+
+Parameters:
+  EC2InstanceAMI:
+    Type    : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default : "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  KeyName:
+    Type    : 'AWS::EC2::KeyPair::KeyName'
+  ELBSecurityGroup:
+    Type    : String
+  APSecurityGroup:
+    Type    : String
+  PublicSubnet1:
+    Type    : String
+  PublicSubnet2:
+    Type    : String
+  PrivateSubnet1:
+    Type    : String
+  PrivateSubnet2:
+    Type    : String
+  RDSDBName:
+    Type    : String
+  RDSMasterUser:
+    Type    : String
+  RDSMasterPassword:
+    Type    : String
+  RDSEndpoint:
+    Type    : String
+Outputs:
+  ELBURL:
+    Value: 
+      Fn::Join:
+      - ''
+      - - http://
+        - !GetAtt FrontELB.DNSName
