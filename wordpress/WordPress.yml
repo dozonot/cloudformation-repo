@@ -4,7 +4,7 @@ Resources:
   Network:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Network-2az.yml
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Network.yml
       Parameters  :
         VPCCIDR            : !Ref VPCCIDR
         PublicSubnet1CIDR  : !Ref PublicSubnet1CIDR
@@ -16,34 +16,35 @@ Resources:
     Properties :
       TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Security.yml
       Parameters  :
-        WordPressVPC: !GetAtt Network.Outputs.WordPressVPC
+        VPC: !GetAtt Network.Outputs.VPC
   RDS:
     Type: AWS::CloudFormation::Stack
     Properties :
       TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/RDS.yml
       Parameters  :
-        PrivateSubnet1    : !GetAtt Network.Outputs.WordPressPrivateSubnet1
-        PrivateSubnet2    : !GetAtt Network.Outputs.WordPressPrivateSubnet2
-        DBSecurityGroup   : !GetAtt Security.Outputs.DBSecurityGroup
+        PrivateSubnet1    : !GetAtt Network.Outputs.PrivateSubnet1
+        PrivateSubnet2    : !GetAtt Network.Outputs.PrivateSubnet2
         RDSInstanceClass  : !Ref RDSInstanceClass
         RDSDBName         : !Ref RDSDBName
         RDSMasterUser     : !Ref RDSMasterUser
         RDSMasterPassword : !Ref RDSMasterPassword
+        DBSecurityGroup   : !GetAtt Security.Outputs.DBSecurityGroup
   AP:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/AP.yml
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/ASG.yml
       Parameters  :
-        PublicSubnet1     : !GetAtt Network.Outputs.WordPressPublicSubnet1
-        PublicSubnet2     : !GetAtt Network.Outputs.WordPressPublicSubnet2
-        PrivateSubnet1    : !GetAtt Network.Outputs.WordPressPrivateSubnet1
-        PrivateSubnet2    : !GetAtt Network.Outputs.WordPressPrivateSubnet2
+        PublicSubnet1     : !GetAtt Network.Outputs.PublicSubnet1
+        PublicSubnet2     : !GetAtt Network.Outputs.PublicSubnet2
+        PrivateSubnet1    : !GetAtt Network.Outputs.PrivateSubnet1
+        PrivateSubnet2    : !GetAtt Network.Outputs.PrivateSubnet2
         ELBSecurityGroup  : !GetAtt Security.Outputs.ELBSecurityGroup
         APSecurityGroup   : !GetAtt Security.Outputs.APSecurityGroup
         RDSEndpoint       : !GetAtt RDS.Outputs.RDSEndpoint
         RDSDBName         : !Ref RDSDBName
         RDSMasterUser     : !Ref RDSMasterUser
         RDSMasterPassword : !Ref RDSMasterPassword
+        EC2InstanceType   : !Ref EC2InstanceType
         KeyName           : !Ref KeyName
 Parameters:
   VPCCIDR:
@@ -125,6 +126,24 @@ Parameters:
     MaxLength      : 16
     NoEcho         : true
     AllowedPattern : '[^\/@"]+'
+  EC2InstanceType:
+    Type          : String
+    Default       : t2.micro
+    AllowedValues :
+      - t2.micro
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+    Description   : Select RDS instance class.
   KeyName:
     Description : The EC2 Key Pair to allow SSH access to the instance.
     Type        : 'AWS::EC2::KeyPair::KeyName'

@@ -1,9 +1,10 @@
 Description:
-  This template buils seciruty configuration for WordPress.
+  This template builds seciruty configuration for WordPress.
 Resources:
-  ELBSecurityGroup: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+  ELBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      VpcId                : !Ref VPC
       GroupDescription     : SecurityGroup for ELB.
       SecurityGroupIngress :
       - IpProtocol            : tcp
@@ -14,29 +15,28 @@ Resources:
         FromPort              : '443'
         ToPort                : '443'
         CidrIp                : 0.0.0.0/0
-      VpcId                : !Ref WordPressVPC
   APSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      VpcId                : !Ref VPC
       GroupDescription     : SecurityGroup for WordPress Servers.
       SecurityGroupIngress :
       - IpProtocol            : tcp
         FromPort              : '80'
         ToPort                : '80'
         SourceSecurityGroupId : !Ref ELBSecurityGroup
-      VpcId                : !Ref WordPressVPC
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      VpcId                : !Ref VPC
       GroupDescription     : SecurityGroup for MySQL Servers.
       SecurityGroupIngress :
       - IpProtocol            : tcp
         FromPort              : '3306'
         ToPort                : '3306'
         SourceSecurityGroupId : !Ref APSecurityGroup
-      VpcId                : !Ref WordPressVPC
 Parameters:
-  WordPressVPC:
+  VPC:
     Type: "String"
 Outputs:
   ELBSecurityGroup:

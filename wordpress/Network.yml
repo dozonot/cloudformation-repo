@@ -18,42 +18,42 @@ Resources:
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
+      VpcId               : !Ref VPC
       AvailabilityZone:
         Fn::Select:
           - 0
           - Fn::GetAZs: ""
       CidrBlock           : !Ref PublicSubnet1CIDR
       MapPublicIpOnLaunch : true
-      VpcId               : !Ref VPC
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
+      VpcId               : !Ref VPC
       AvailabilityZone:
         Fn::Select:
           - 1
           - Fn::GetAZs: ""
       CidrBlock           : !Ref PublicSubnet2CIDR
       MapPublicIpOnLaunch : true
-      VpcId               : !Ref VPC
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
+      VpcId               : !Ref VPC
       AvailabilityZone:
         Fn::Select:
           - 0
           - Fn::GetAZs: ""
       CidrBlock           : !Ref PrivateSubnet1CIDR
-      VpcId               : !Ref VPC
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
+      VpcId               : !Ref VPC
       AvailabilityZone:
         Fn::Select:
           - 1
           - Fn::GetAZs: ""
       CidrBlock           : !Ref PrivateSubnet2CIDR
-      VpcId               : !Ref VPC
-  ElasticIP1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html
+  ElasticIP1:
     Type: AWS::EC2::EIP
     Properties:
       Domain: !Ref VPC
@@ -61,7 +61,7 @@ Resources:
     Type: AWS::EC2::EIP
     Properties:
       Domain: !Ref VPC
-  NatGateway1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-natgateway.html
+  NatGateway1:
     Type: AWS::EC2::NatGateway
     DependsOn: InternetGateway
     Properties:
@@ -79,11 +79,11 @@ Resources:
           - ElasticIP2
           - AllocationId
       SubnetId     : !Ref PublicSubnet2
-  PublicRouteTable: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route-table.html
+  PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId : !Ref VPC
-  PublicRoute: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+  PublicRoute:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock : 0.0.0.0/0
@@ -97,19 +97,19 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId : !Ref VPC
-  PrivateRoute1: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+  PrivateRoute1:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock : 0.0.0.0/0
       NatGatewayId         : !Ref NatGateway1
       RouteTableId         : !Ref PrivateRouteTable1
-  PrivateRoute2: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+  PrivateRoute2:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock : 0.0.0.0/0
       NatGatewayId         : !Ref NatGateway2
       RouteTableId         : !Ref PrivateRouteTable2
-  PublicSubnet1RouteTableAssociation: # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
+  PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
@@ -143,13 +143,13 @@ Parameters:
     Type: String
 
 Outputs:
-  WordPressVPC:
+  VPC:
     Value: !Ref VPC
-  WordPressPrivateSubnet1:
-    Value: !Ref PrivateSubnet1
-  WordPressPrivateSubnet2:
-    Value: !Ref PrivateSubnet2
-  WordPressPublicSubnet1:
+  PublicSubnet1:
     Value: !Ref PublicSubnet1
-  WordPressPublicSubnet2:
+  PublicSubnet2:
     Value: !Ref PublicSubnet2
+  PrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+  PrivateSubnet2:
+    Value: !Ref PrivateSubnet2
