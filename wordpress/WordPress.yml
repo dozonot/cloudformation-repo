@@ -1,5 +1,6 @@
 Description:
   This template wraps WordPress templates.
+
 Resources:
   Network:
     Type: AWS::CloudFormation::Stack
@@ -17,6 +18,14 @@ Resources:
       TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Security.yml
       Parameters  :
         VPC: !GetAtt Network.Outputs.VPC
+  EFS:
+    Type: AWS::CloudFormation::Stack
+    Properties :
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/EFS.yml
+      Parameters  :
+        EFSSecurityGroup: !GetAtt Security.Outputs.EFSSecurityGroup
+        PrivateSubnet1    : !GetAtt Network.Outputs.PrivateSubnet1
+        PrivateSubnet2    : !GetAtt Network.Outputs.PrivateSubnet2
   RDS:
     Type: AWS::CloudFormation::Stack
     Properties :
@@ -29,7 +38,7 @@ Resources:
         RDSMasterUser     : !Ref RDSMasterUser
         RDSMasterPassword : !Ref RDSMasterPassword
         DBSecurityGroup   : !GetAtt Security.Outputs.DBSecurityGroup
-  AP:
+  ASG:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/ASG.yml
@@ -40,12 +49,14 @@ Resources:
         PrivateSubnet2    : !GetAtt Network.Outputs.PrivateSubnet2
         ELBSecurityGroup  : !GetAtt Security.Outputs.ELBSecurityGroup
         APSecurityGroup   : !GetAtt Security.Outputs.APSecurityGroup
+        EFS               : !GetAtt EFS.Outputs.EFS
         RDSEndpoint       : !GetAtt RDS.Outputs.RDSEndpoint
         RDSDBName         : !Ref RDSDBName
         RDSMasterUser     : !Ref RDSMasterUser
         RDSMasterPassword : !Ref RDSMasterPassword
         EC2InstanceType   : !Ref EC2InstanceType
         KeyName           : !Ref KeyName
+
 Parameters:
   VPCCIDR:
     Type: String
@@ -147,6 +158,7 @@ Parameters:
   KeyName:
     Description : The EC2 Key Pair to allow SSH access to the instance.
     Type        : 'AWS::EC2::KeyPair::KeyName'
+
 Outputs:
   WordPressURL:
-    Value: !GetAtt AP.Outputs.ELBURL
+    Value: !GetAtt ASG.Outputs.ELBURL

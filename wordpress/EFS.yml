@@ -1,0 +1,32 @@
+Description:
+  This template builds EFS for WordPress.
+
+Resources:
+  EFS:
+    Type: AWS::EFS::FileSystem
+  EFSMountTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId   : !Ref EFS
+      SecurityGroups :
+        - !Ref EFSSecurityGroup 
+      SubnetId       : !Ref PrivateSubnet1
+  EFSMountTarget2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId   : !Ref EFS
+      SecurityGroups :
+        - !Ref EFSSecurityGroup 
+      SubnetId       : !Ref PrivateSubnet2
+
+Parameters:
+  EFSSecurityGroup:
+    Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
+
+Outputs:
+  EFS:
+    Value: !Ref EFS

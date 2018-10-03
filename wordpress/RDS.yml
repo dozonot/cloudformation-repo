@@ -1,5 +1,6 @@
 Description:
   This template builds RDS for WordPress.
+
 Resources:
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -25,6 +26,7 @@ Resources:
       StorageType        : gp2
       VPCSecurityGroups  :
         - !Ref DBSecurityGroup
+
 Parameters:
   PrivateSubnet1:
     Type: String
@@ -40,6 +42,7 @@ Parameters:
     Type: String
   DBSecurityGroup:
     Type: String
+
 Outputs:
   RDSEndpoint:
     Value:

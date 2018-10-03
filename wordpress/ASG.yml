@@ -1,5 +1,6 @@
 Description:
   This template biulds Auto Scaling for WordPress.
+
 Resources:
   FrontELB:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
@@ -39,6 +40,7 @@ Resources:
               php: []
               php-mysql: []
               php-mbstring: []
+              amazon-efs-utils: []
           files:
             /etc/cfn/cfn-hup.conf:
               content: !Sub |
@@ -67,41 +69,58 @@ Resources:
                   - /etc/cfn/cfn-hup.conf
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
           commands:
-            command1:
-              command: "curl -LO https://ja.wordpress.org/latest-ja.tar.gz && tar zxvf latest-ja.tar.gz"
-              cwd: "/tmp"
-            command2:
-              command: "cp -Rp * /var/www/html/"
-              cwd: "/tmp/wordpress"
-            command3:
-              command: "chown -R apache.apache /var/www/html"
-              cwd: "/tmp"
-            command4:
-              command: "cp -p wp-config-sample.php wp-config.php"
-              cwd: "/var/www/html/"
-            command5:
-              command: "sed -i -e s/database_name_here/${RDSDBName}/g wp-config.php"
-              cwd: "/var/www/html/"
-              env:
+            command01:
+              command      : "mount -t efs ${EFS}:/ /var/www/html"
+              cwd          : "/tmp"
+              env          :
+                EFS: !Ref EFS
+            command02:
+              command      : "curl -LO https://ja.wordpress.org/latest-ja.tar.gz && tar zxvf latest-ja.tar.gz"
+              cwd          : "/tmp"
+              test         : "test ! -e /var/www/html/index.php"
+              ignoreErrors : true
+            command03:
+              command      : "cp -Rp * /var/www/html/ && chown -R apache.apache /var/www/html"
+              cwd          : "/tmp/wordpress"
+              test         : "test -e /tmp/wordpress"
+              ignoreErrors : true
+            command05:
+              command      : "cp -p wp-config-sample.php wp-config.php"
+              cwd          : "/var/www/html/"
+              test         : "test ! -e /var/www/html/wp-config.php"
+            command06:
+              command      : "sed -i -e s/database_name_here/${RDSDBName}/g wp-config.php"
+              cwd          : "/var/www/html/"
+              env          :
                 RDSDBName: !Ref RDSDBName
-            command6:
-              command: "sed -i -e s/username_here/${RDSMasterUser}/g /var/www/html/wp-config.php"
-              cwd: "/var/www/html/"
-              env:
+              test         : "grep database_name_here /var/www/html/wp-config.php"
+              ignoreErrors : true
+            command07:
+              command      : "sed -i -e s/username_here/${RDSMasterUser}/g /var/www/html/wp-config.php"
+              cwd          : "/var/www/html/"
+              env          :
                 RDSMasterUser: !Ref RDSMasterUser
-            command7:
-              command: "sed -i -e s/password_here/${RDSMasterPassword}/g /var/www/html/wp-config.php"
-              cwd: "/var/www/html/"
-              env:
+              test         : "grep username_here /var/www/html/wp-config.php"
+              ignoreErrors : true
+            command08:
+              command      : "sed -i -e s/password_here/${RDSMasterPassword}/g /var/www/html/wp-config.php"
+              cwd          : "/var/www/html/"
+              env          :
                 RDSMasterPassword: !Ref RDSMasterPassword
-            command8:
-              command: "sed -i -e s/localhost/${RDSEndpoint}/g /var/www/html/wp-config.php"
-              cwd: "/var/www/html/"
-              env:
+              test         : "grep password_here /var/www/html/wp-config.php"
+              ignoreErrors : true
+            command09:
+              command      : "sed -i -e s/localhost/${RDSEndpoint}/g /var/www/html/wp-config.php"
+              cwd          : "/var/www/html/"
+              env          :
                 RDSEndpoint: !Ref RDSEndpoint
-            command9:
-              command: "touch hc.html && chown apache.apache hc.html"
-              cwd: "/var/www/html/"
+              test         : "grep localhost /var/www/html/wp-config.php"
+              ignoreErrors : true
+            command10:
+              command      : "touch hc.html && chown apache.apache hc.html"
+              cwd          : "/var/www/html/"
+              test         : "test ! -e /var/www/html/hc.html"
+              ignoreErrors : true
     Properties:
       AssociatePublicIpAddress : false
       InstanceMonitoring       : false
@@ -149,6 +168,8 @@ Parameters:
     Type    : String
   APSecurityGroup:
     Type    : String
+  EFS:
+    Type    : String
   PublicSubnet1:
     Type    : String
   PublicSubnet2:
@@ -165,6 +186,7 @@ Parameters:
     Type    : String
   RDSEndpoint:
     Type    : String
+
 Outputs:
   ELBURL:
     Value: 
