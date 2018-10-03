@@ -7,7 +7,7 @@ Resources:
     Properties:
       CrossZone      : true
       HealthCheck    :
-        Target            :
+        Target :
           Fn::Join:
           - ''
           - - 'HTTP:'
@@ -36,11 +36,11 @@ Resources:
         config:
           packages:
             yum:
-              httpd: []
-              php: []
-              php-mysql: []
-              php-mbstring: []
-              amazon-efs-utils: []
+              httpd            : []
+              php              : []
+              php-mysql        : []
+              php-mbstring     : []
+              amazon-efs-utils : []
           files:
             /etc/cfn/cfn-hup.conf:
               content: !Sub |
@@ -80,8 +80,8 @@ Resources:
               test         : "test ! -e /var/www/html/index.php"
               ignoreErrors : true
             command03:
-              command      : "cp -Rp * /var/www/html/ && chown -R apache.apache /var/www/html"
-              cwd          : "/tmp/wordpress"
+              command      : "cp -Rp /tmp/wordpress/* /var/www/html/ && chown -R apache.apache /var/www/html"
+              cwd          : "/tmp"
               test         : "test -e /tmp/wordpress"
               ignoreErrors : true
             command05:
