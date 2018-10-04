@@ -30,18 +30,57 @@ Resources:
 Parameters:
   PrivateSubnet1:
     Type: String
+    Description   : Please enter VPC private subnet1 for SubnetGroup.
   PrivateSubnet2:
     Type: String
+    Description   : Please enter VPC private subnet2 for SubnetGroup.
   RDSInstanceClass:
-    Type: String
+    Type          : String
+    Default       : db.t2.small
+    AllowedValues :
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+      - db.t2.large
+      - db.t2.xlarge
+      - db.t2.2xlarge
+      - db.m5.large
+      - db.m5.xlarge
+      - db.m5.2xlarge
+      - db.m5.4xlarge
+      - db.m5.12xlarge
+      - db.m5.24xlarge
+      - db.r4.large
+      - db.r4.xlarge
+      - db.r4.2xlarge
+      - db.r4.4xlarge
+      - db.r4.8xlarge
+      - db.r4.16xlarge
+    Description   : Select RDS instance class.
   RDSDBName:
-    Type: String
+    Type           : String
+    Default        : wordpress
+    MinLength      : 1
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[a-z]+'
   RDSMasterUser:
-    Type: String
-  RDSMasterPassword:
-    Type: String
+    Type           : String
+    Default        : admin
+    MinLength      : 1
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[a-z]+'
+  RDSMasterPassword :
+    Type           : String
+    Default        : password
+    MinLength      : 8
+    MaxLength      : 16
+    NoEcho         : true
+    AllowedPattern : '[^\/@"]+'
   DBSecurityGroup:
     Type: String
+    Description   : Please enter VPC Security Group ID for RDS.
 
 Outputs:
   RDSEndpoint:

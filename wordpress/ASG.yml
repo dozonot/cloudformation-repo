@@ -166,26 +166,37 @@ Parameters:
     Type    : 'AWS::EC2::KeyPair::KeyName'
   ELBSecurityGroup:
     Type    : String
+    Description   : Please enter VPC Security Group ID for ELB.
   APSecurityGroup:
     Type    : String
+    Description   : Please enter VPC Security Group ID for AP Server.
   EFS:
     Type    : String
+    Description   : Please enter EFS ID.
   PublicSubnet1:
     Type    : String
+    Description   : Please enter VPC public subnet1 for ELB.
   PublicSubnet2:
     Type    : String
+    Description   : Please enter VPC public subnet2 for ELB.
   PrivateSubnet1:
     Type    : String
+    Description   : Please enter VPC private subnet1 for AutoScaling.
   PrivateSubnet2:
     Type    : String
+    Description   : Please enter VPC private subnet2 for AutoScaling.
   RDSDBName:
     Type    : String
+    Description   : Please enter RDS database name.
   RDSMasterUser:
     Type    : String
+    Description   : Please enter RDS master user account name.
   RDSMasterPassword:
     Type    : String
+    Description   : Please enter RDS master user password.
   RDSEndpoint:
     Type    : String
+    Description   : Please enter RDS Endpoint(FQDN only).
 
 Outputs:
   ELBURL:

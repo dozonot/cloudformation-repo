@@ -46,6 +46,7 @@ Resources:
 Parameters:
   VPC:
     Type: "String"
+    Description   : Please enter VPC ID.
 
 Outputs:
   ELBSecurityGroup:

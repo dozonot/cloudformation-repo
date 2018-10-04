@@ -22,10 +22,13 @@ Resources:
 Parameters:
   EFSSecurityGroup:
     Type: String
+    Description   : Please enter VPC Security Group ID for EFS.
   PrivateSubnet1:
     Type: String
+    Description   : Please enter VPC private subnet1 for MountTarget.
   PrivateSubnet2:
     Type: String
+    Description   : Please enter VPC private subnet2 for MountTarget.
 
 Outputs:
   EFS:

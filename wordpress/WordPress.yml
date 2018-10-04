@@ -154,7 +154,7 @@ Parameters:
       - m5.4xlarge
       - m5.12xlarge
       - m5.24xlarge
-    Description   : Select RDS instance class.
+    Description   : Select EC2 instance class.
   KeyName:
     Description : The EC2 Key Pair to allow SSH access to the instance.
     Type        : 'AWS::EC2::KeyPair::KeyName'
