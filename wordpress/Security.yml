@@ -1,59 +1,59 @@
 Description:
   This template builds seciruty configuration for WordPress.
 
+Parameters:
+  WordPressVPC:
+    Type: "String"
+    Description   : Please enter VPC ID.
+
 Resources:
-  ELBSecurityGroup:
+  WordPressELBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId                : !Ref VPC
+      VpcId                : !Ref WordPressVPC
       GroupDescription     : SecurityGroup for ELB.
       SecurityGroupIngress :
       - IpProtocol            : tcp
         FromPort              : '80'
         ToPort                : '80'
         CidrIp                : 0.0.0.0/0
-  APSecurityGroup:
+  WordPressAPSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId                : !Ref VPC
+      VpcId                : !Ref WordPressVPC
       GroupDescription     : SecurityGroup for WordPress Servers.
       SecurityGroupIngress :
       - IpProtocol            : tcp
         FromPort              : '80'
         ToPort                : '80'
-        SourceSecurityGroupId : !Ref ELBSecurityGroup
-  EFSSecurityGroup:
+        SourceSecurityGroupId : !Ref WordPressELBSecurityGroup
+  WordPressEFSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId                : !Ref VPC
+      VpcId                : !Ref WordPressVPC
       GroupDescription     : SecurityGroup for EFS.
       SecurityGroupIngress :
       - IpProtocol            : tcp
         FromPort              : '2049'
         ToPort                : '2049'
-        SourceSecurityGroupId : !Ref APSecurityGroup
-  DBSecurityGroup:
+        SourceSecurityGroupId : !Ref WordPressAPSecurityGroup
+  WordPressDBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId                : !Ref VPC
+      VpcId                : !Ref WordPressVPC
       GroupDescription     : SecurityGroup for MySQL Servers.
       SecurityGroupIngress :
       - IpProtocol            : tcp
         FromPort              : '3306'
         ToPort                : '3306'
-        SourceSecurityGroupId : !Ref APSecurityGroup
-
-Parameters:
-  VPC:
-    Type: "String"
-    Description   : Please enter VPC ID.
+        SourceSecurityGroupId : !Ref WordPressAPSecurityGroup
 
 Outputs:
-  ELBSecurityGroup:
-    Value: !Ref ELBSecurityGroup
-  APSecurityGroup:
-    Value: !Ref APSecurityGroup
-  DBSecurityGroup:
-    Value: !Ref DBSecurityGroup
-  EFSSecurityGroup:
-    Value: !Ref EFSSecurityGroup
+  WordPressELBSecurityGroup:
+    Value: !Ref WordPressELBSecurityGroup
+  WordPressAPSecurityGroup:
+    Value: !Ref WordPressAPSecurityGroup
+  WordPressDBSecurityGroup:
+    Value: !Ref WordPressDBSecurityGroup
+  WordPressEFSSecurityGroup:
+    Value: !Ref WordPressEFSSecurityGroup

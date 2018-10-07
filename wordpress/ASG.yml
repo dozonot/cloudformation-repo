@@ -1,18 +1,56 @@
 Description:
   This template biulds Auto Scaling for WordPress.
 
+Parameters:
+  WordPressEC2InstanceAMI:
+    Type    : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default : "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  WordPressEC2InstanceType:
+    Type    : String
+    Default : t2.micro
+  WordPressKeyName:
+    Type    : 'AWS::EC2::KeyPair::KeyName'
+  WordPressELBSecurityGroup:
+    Type    : String
+    Description   : Please enter VPC Security Group ID for ELB.
+  WordPressAPSecurityGroup:
+    Type    : String
+    Description   : Please enter VPC Security Group ID for AP Server.
+  WordPressEFS:
+    Type    : String
+    Description   : Please enter EFS ID.
+  WordPressPublicSubnet1:
+    Type    : String
+    Description   : Please enter VPC public subnet1 for ELB.
+  WordPressPublicSubnet2:
+    Type    : String
+    Description   : Please enter VPC public subnet2 for ELB.
+  WordPressPrivateSubnet1:
+    Type    : String
+    Description   : Please enter VPC private subnet1 for AutoScaling.
+  WordPressPrivateSubnet2:
+    Type    : String
+    Description   : Please enter VPC private subnet2 for AutoScaling.
+  WordPressRDSDBName:
+    Type    : String
+    Description   : Please enter RDS database name.
+  WordPressRDSMasterUser:
+    Type    : String
+    Description   : Please enter RDS master user account name.
+  WordPressRDSMasterPassword:
+    Type    : String
+    Description   : Please enter RDS master user password.
+  WordPressRDSEndpoint:
+    Type    : String
+    Description   : Please enter RDS Endpoint(FQDN only).
+
 Resources:
-  FrontELB:
+  WordPressFrontELB:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       CrossZone      : true
       HealthCheck    :
-        Target :
-          Fn::Join:
-          - ''
-          - - 'HTTP:'
-            - 80
-            - "/hc.html"
+        Target             : "HTTP:80/hc.html"
         Interval           : 10
         Timeout            : 5
         HealthyThreshold   : 2
@@ -24,14 +62,14 @@ Resources:
           Protocol         : HTTP
       Scheme         : internet-facing
       SecurityGroups :
-        - !Ref ELBSecurityGroup
+        - !Ref WordPressELBSecurityGroup
       Subnets        :
-        - !Ref PublicSubnet1
-        - !Ref PublicSubnet2
-  LaunchConfiguration:
+        - !Ref WordPressPublicSubnet1
+        - !Ref WordPressPublicSubnet2
+  WordPressLaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
-      Comment: Install a simple PHP application
+      Comment: Install a WordPress
       AWS::CloudFormation::Init:
         config:
           packages:
@@ -54,8 +92,8 @@ Resources:
               content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
-                path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init -s ${AWS::StackId} -r LaunchConfiguration --region ${AWS::Region}
+                path=Resources.WordPressLaunchConfiguration.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -s ${AWS::StackId} -r WordPressLaunchConfiguration --region ${AWS::Region}
                 runas=root
           services:
             sysvinit:
@@ -70,10 +108,10 @@ Resources:
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
           commands:
             command01:
-              command      : "mount -t efs ${EFS}:/ /var/www/html"
+              command      : "mount -t efs ${WordPressEFS}:/ /var/www/html"
               cwd          : "/tmp"
               env          :
-                EFS: !Ref EFS
+                WordPressEFS: !Ref WordPressEFS
             command02:
               command      : "curl -LO https://ja.wordpress.org/latest-ja.tar.gz && tar zxvf latest-ja.tar.gz"
               cwd          : "/tmp"
@@ -89,31 +127,31 @@ Resources:
               cwd          : "/var/www/html/"
               test         : "test ! -e /var/www/html/wp-config.php"
             command06:
-              command      : "sed -i -e s/database_name_here/${RDSDBName}/g wp-config.php"
+              command      : "sed -i -e s/database_name_here/${WordPressRDSDBName}/g wp-config.php"
               cwd          : "/var/www/html/"
               env          :
-                RDSDBName: !Ref RDSDBName
+                WordPressRDSDBName: !Ref WordPressRDSDBName
               test         : "grep database_name_here /var/www/html/wp-config.php"
               ignoreErrors : true
             command07:
-              command      : "sed -i -e s/username_here/${RDSMasterUser}/g /var/www/html/wp-config.php"
+              command      : "sed -i -e s/username_here/${WordPressRDSMasterUser}/g /var/www/html/wp-config.php"
               cwd          : "/var/www/html/"
               env          :
-                RDSMasterUser: !Ref RDSMasterUser
+                WordPressRDSMasterUser: !Ref WordPressRDSMasterUser
               test         : "grep username_here /var/www/html/wp-config.php"
               ignoreErrors : true
             command08:
-              command      : "sed -i -e s/password_here/${RDSMasterPassword}/g /var/www/html/wp-config.php"
+              command      : "sed -i -e s/password_here/${WordPressRDSMasterPassword}/g /var/www/html/wp-config.php"
               cwd          : "/var/www/html/"
               env          :
-                RDSMasterPassword: !Ref RDSMasterPassword
+                WordPressRDSMasterPassword: !Ref WordPressRDSMasterPassword
               test         : "grep password_here /var/www/html/wp-config.php"
               ignoreErrors : true
             command09:
-              command      : "sed -i -e s/localhost/${RDSEndpoint}/g /var/www/html/wp-config.php"
+              command      : "sed -i -e s/localhost/${WordPressRDSEndpoint}/g /var/www/html/wp-config.php"
               cwd          : "/var/www/html/"
               env          :
-                RDSEndpoint: !Ref RDSEndpoint
+                WordPressRDSEndpoint: !Ref WordPressRDSEndpoint
               test         : "grep localhost /var/www/html/wp-config.php"
               ignoreErrors : true
             command10:
@@ -124,84 +162,38 @@ Resources:
     Properties:
       AssociatePublicIpAddress : false
       InstanceMonitoring       : false
-      InstanceType             : !Ref EC2InstanceType
-      KeyName                  : !Ref KeyName
-      ImageId                  : !Ref EC2InstanceAMI
+      InstanceType             : !Ref WordPressEC2InstanceType
+      KeyName                  : !Ref WordPressKeyName
+      ImageId                  : !Ref WordPressEC2InstanceAMI
       SecurityGroups           :
-        - !Ref APSecurityGroup
+        - !Ref WordPressAPSecurityGroup
       SpotPrice                : "0.50"
       UserData: !Base64
         Fn::Sub: |
           #!/bin/bash -xe
           yum install -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource WordPressLaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-hup || error_exit ''Failed to start cfn-hup''
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WordPressLaunchConfiguration --region ${AWS::Region}
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
-  AutoScalingGroup:
+  WordPressAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier       :
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
+        - !Ref WordPressPrivateSubnet1
+        - !Ref WordPressPrivateSubnet2
       HealthCheckType         : ELB
       HealthCheckGracePeriod  : 10
-      LaunchConfigurationName : !Ref LaunchConfiguration
+      LaunchConfigurationName : !Ref WordPressLaunchConfiguration
       LoadBalancerNames       :
-        - !Ref FrontELB
+        - !Ref WordPressFrontELB
       MaxSize                 : 2
       DesiredCapacity         : 2
       MinSize                 : 2
 
-Parameters:
-  EC2InstanceAMI:
-    Type    : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default : "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
-  EC2InstanceType:
-    Type    : String
-    Default : t2.micro
-  KeyName:
-    Type    : 'AWS::EC2::KeyPair::KeyName'
-  ELBSecurityGroup:
-    Type    : String
-    Description   : Please enter VPC Security Group ID for ELB.
-  APSecurityGroup:
-    Type    : String
-    Description   : Please enter VPC Security Group ID for AP Server.
-  EFS:
-    Type    : String
-    Description   : Please enter EFS ID.
-  PublicSubnet1:
-    Type    : String
-    Description   : Please enter VPC public subnet1 for ELB.
-  PublicSubnet2:
-    Type    : String
-    Description   : Please enter VPC public subnet2 for ELB.
-  PrivateSubnet1:
-    Type    : String
-    Description   : Please enter VPC private subnet1 for AutoScaling.
-  PrivateSubnet2:
-    Type    : String
-    Description   : Please enter VPC private subnet2 for AutoScaling.
-  RDSDBName:
-    Type    : String
-    Description   : Please enter RDS database name.
-  RDSMasterUser:
-    Type    : String
-    Description   : Please enter RDS master user account name.
-  RDSMasterPassword:
-    Type    : String
-    Description   : Please enter RDS master user password.
-  RDSEndpoint:
-    Type    : String
-    Description   : Please enter RDS Endpoint(FQDN only).
-
 Outputs:
-  ELBURL:
+  WordPressELBURL:
     Value: 
-      Fn::Join:
-      - ''
-      - - http://
-        - !GetAtt FrontELB.DNSName
+      !Join [ "", [ "http://", !GetAtt WordPressFrontELB.DNSName ] ]

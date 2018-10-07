@@ -1,35 +1,35 @@
 Description:
   This template builds EFS for WordPress.
 
-Resources:
-  EFS:
-    Type: AWS::EFS::FileSystem
-  EFSMountTarget1:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId   : !Ref EFS
-      SecurityGroups :
-        - !Ref EFSSecurityGroup 
-      SubnetId       : !Ref PrivateSubnet1
-  EFSMountTarget2:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId   : !Ref EFS
-      SecurityGroups :
-        - !Ref EFSSecurityGroup 
-      SubnetId       : !Ref PrivateSubnet2
-
 Parameters:
-  EFSSecurityGroup:
+  WordPressEFSSecurityGroup:
     Type: String
     Description   : Please enter VPC Security Group ID for EFS.
-  PrivateSubnet1:
+  WordPressPrivateSubnet1:
     Type: String
     Description   : Please enter VPC private subnet1 for MountTarget.
-  PrivateSubnet2:
+  WordPressPrivateSubnet2:
     Type: String
     Description   : Please enter VPC private subnet2 for MountTarget.
 
+Resources:
+  WordPressEFS:
+    Type: AWS::EFS::FileSystem
+  WordPressEFSMountTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId   : !Ref WordPressEFS
+      SecurityGroups :
+        - !Ref WordPressEFSSecurityGroup 
+      SubnetId       : !Ref WordPressPrivateSubnet1
+  WordPressEFSMountTarget2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId   : !Ref WordPressEFS
+      SecurityGroups :
+        - !Ref WordPressEFSSecurityGroup 
+      SubnetId       : !Ref WordPressPrivateSubnet2
+
 Outputs:
-  EFS:
-    Value: !Ref EFS
+  WordPressEFS:
+    Value: !Ref WordPressEFS

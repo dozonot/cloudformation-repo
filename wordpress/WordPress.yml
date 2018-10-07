@@ -1,99 +1,43 @@
 Description:
   This template wraps WordPress templates.
 
-Resources:
-  Network:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Network.yml
-      Parameters  :
-        VPCCIDR            : !Ref VPCCIDR
-        PublicSubnet1CIDR  : !Ref PublicSubnet1CIDR
-        PublicSubnet2CIDR  : !Ref PublicSubnet2CIDR
-        PrivateSubnet1CIDR : !Ref PrivateSubnet1CIDR
-        PrivateSubnet2CIDR : !Ref PrivateSubnet2CIDR
-  Security:
-    Type: AWS::CloudFormation::Stack
-    Properties :
-      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Security.yml
-      Parameters  :
-        VPC: !GetAtt Network.Outputs.VPC
-  EFS:
-    Type: AWS::CloudFormation::Stack
-    Properties :
-      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/EFS.yml
-      Parameters  :
-        EFSSecurityGroup: !GetAtt Security.Outputs.EFSSecurityGroup
-        PrivateSubnet1    : !GetAtt Network.Outputs.PrivateSubnet1
-        PrivateSubnet2    : !GetAtt Network.Outputs.PrivateSubnet2
-  RDS:
-    Type: AWS::CloudFormation::Stack
-    Properties :
-      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/RDS.yml
-      Parameters  :
-        PrivateSubnet1    : !GetAtt Network.Outputs.PrivateSubnet1
-        PrivateSubnet2    : !GetAtt Network.Outputs.PrivateSubnet2
-        RDSInstanceClass  : !Ref RDSInstanceClass
-        RDSDBName         : !Ref RDSDBName
-        RDSMasterUser     : !Ref RDSMasterUser
-        RDSMasterPassword : !Ref RDSMasterPassword
-        DBSecurityGroup   : !GetAtt Security.Outputs.DBSecurityGroup
-  ASG:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/ASG.yml
-      Parameters  :
-        PublicSubnet1     : !GetAtt Network.Outputs.PublicSubnet1
-        PublicSubnet2     : !GetAtt Network.Outputs.PublicSubnet2
-        PrivateSubnet1    : !GetAtt Network.Outputs.PrivateSubnet1
-        PrivateSubnet2    : !GetAtt Network.Outputs.PrivateSubnet2
-        ELBSecurityGroup  : !GetAtt Security.Outputs.ELBSecurityGroup
-        APSecurityGroup   : !GetAtt Security.Outputs.APSecurityGroup
-        EFS               : !GetAtt EFS.Outputs.EFS
-        RDSEndpoint       : !GetAtt RDS.Outputs.RDSEndpoint
-        RDSDBName         : !Ref RDSDBName
-        RDSMasterUser     : !Ref RDSMasterUser
-        RDSMasterPassword : !Ref RDSMasterPassword
-        EC2InstanceType   : !Ref EC2InstanceType
-        KeyName           : !Ref KeyName
-
 Parameters:
-  VPCCIDR:
+  WordPressVPCCIDR:
     Type: String
     Default: 10.0.0.0/16
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Description: CIDR block for VPC.
-  PublicSubnet1CIDR:
+  WordPressPublicSubnet1CIDR:
     Type: String
     Default: 10.0.0.0/24
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Description: CIDR block for Public subnet 1.
-  PublicSubnet2CIDR:
+  WordPressPublicSubnet2CIDR:
     Type: String
     Default: 10.0.1.0/24
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Description: CIDR block for Public subnet 2.
-  PrivateSubnet1CIDR:
+  WordPressPrivateSubnet1CIDR:
     Type: String
     Default: 10.0.2.0/24
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Description: CIDR block for Private subnet 1.
-  PrivateSubnet2CIDR:
+  WordPressPrivateSubnet2CIDR:
     Type: String
     Default: 10.0.3.0/24
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Description: CIDR block for Private subnet 2.
-  RDSInstanceClass:
+  WordPressRDSInstanceClass:
     Type          : String
     Default       : db.t2.small
     AllowedValues :
@@ -116,28 +60,28 @@ Parameters:
       - db.r4.8xlarge
       - db.r4.16xlarge
     Description   : Select RDS instance class.
-  RDSDBName:
+  WordPressRDSDBName:
     Type           : String
     Default        : wordpress
     MinLength      : 1
     MaxLength      : 16
     NoEcho         : true
     AllowedPattern : '[a-z]+'
-  RDSMasterUser:
+  WordPressRDSMasterUser:
     Type           : String
     Default        : admin
     MinLength      : 1
     MaxLength      : 16
     NoEcho         : true
     AllowedPattern : '[a-z]+'
-  RDSMasterPassword :
+  WordPressRDSMasterPassword :
     Type           : String
     Default        : password
     MinLength      : 8
     MaxLength      : 16
     NoEcho         : true
     AllowedPattern : '[^\/@"]+'
-  EC2InstanceType:
+  WordPressEC2InstanceType:
     Type          : String
     Default       : t2.micro
     AllowedValues :
@@ -155,10 +99,66 @@ Parameters:
       - m5.12xlarge
       - m5.24xlarge
     Description   : Select EC2 instance class.
-  KeyName:
+  WordPressKeyName:
     Description : The EC2 Key Pair to allow SSH access to the instance.
     Type        : 'AWS::EC2::KeyPair::KeyName'
 
+Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Network.yml
+      Parameters  :
+        WordPressVPCCIDR            : !Ref WordPressVPCCIDR
+        WordPressPublicSubnet1CIDR  : !Ref WordPressPublicSubnet1CIDR
+        WordPressPublicSubnet2CIDR  : !Ref WordPressPublicSubnet2CIDR
+        WordPressPrivateSubnet1CIDR : !Ref WordPressPrivateSubnet1CIDR
+        WordPressPrivateSubnet2CIDR : !Ref WordPressPrivateSubnet2CIDR
+  Security:
+    Type: AWS::CloudFormation::Stack
+    Properties :
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/Security.yml
+      Parameters  :
+        WordPressVPC: !GetAtt Network.Outputs.WordPressVPC
+  EFS:
+    Type: AWS::CloudFormation::Stack
+    Properties :
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/EFS.yml
+      Parameters  :
+        WordPressEFSSecurityGroup  : !GetAtt Security.Outputs.WordPressEFSSecurityGroup
+        WordPressPrivateSubnet1    : !GetAtt Network.Outputs.WordPressPrivateSubnet1
+        WordPressPrivateSubnet2    : !GetAtt Network.Outputs.WordPressPrivateSubnet2
+  RDS:
+    Type: AWS::CloudFormation::Stack
+    Properties :
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/RDS.yml
+      Parameters  :
+        WordPressPrivateSubnet1    : !GetAtt Network.Outputs.WordPressPrivateSubnet1
+        WordPressPrivateSubnet2    : !GetAtt Network.Outputs.WordPressPrivateSubnet2
+        WordPressRDSInstanceClass  : !Ref WordPressRDSInstanceClass
+        WordPressRDSDBName         : !Ref WordPressRDSDBName
+        WordPressRDSMasterUser     : !Ref WordPressRDSMasterUser
+        WordPressRDSMasterPassword : !Ref WordPressRDSMasterPassword
+        WordPressDBSecurityGroup   : !GetAtt Security.Outputs.WordPressDBSecurityGroup
+  ASG:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL : https://s3-ap-northeast-1.amazonaws.com/dozono-cloudformation/WordPress/ASG.yml
+      Parameters  :
+        WordPressPublicSubnet1     : !GetAtt Network.Outputs.WordPressPublicSubnet1
+        WordPressPublicSubnet2     : !GetAtt Network.Outputs.WordPressPublicSubnet2
+        WordPressPrivateSubnet1    : !GetAtt Network.Outputs.WordPressPrivateSubnet1
+        WordPressPrivateSubnet2    : !GetAtt Network.Outputs.WordPressPrivateSubnet2
+        WordPressELBSecurityGroup  : !GetAtt Security.Outputs.WordPressELBSecurityGroup
+        WordPressAPSecurityGroup   : !GetAtt Security.Outputs.WordPressAPSecurityGroup
+        WordPressEFS               : !GetAtt EFS.Outputs.WordPressEFS
+        WordPressRDSEndpoint       : !GetAtt RDS.Outputs.WordPressRDSEndpoint
+        WordPressRDSDBName         : !Ref WordPressRDSDBName
+        WordPressRDSMasterUser     : !Ref WordPressRDSMasterUser
+        WordPressRDSMasterPassword : !Ref WordPressRDSMasterPassword
+        WordPressEC2InstanceType   : !Ref WordPressEC2InstanceType
+        WordPressKeyName           : !Ref WordPressKeyName
+
 Outputs:
   WordPressURL:
-    Value: !GetAtt ASG.Outputs.ELBURL
+    Value: !GetAtt ASG.Outputs.WordPressELBURL

@@ -1,40 +1,14 @@
 Description:
   This template builds RDS for WordPress.
 
-Resources:
-  RDSSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: "SubnetGroup for WordPress"
-      SubnetIds:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
-  RDSInstance:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      AllocatedStorage   : 20
-      DBSubnetGroupName  : !Ref RDSSubnetGroup
-      DBInstanceClass    : !Ref RDSInstanceClass
-      DBName             : !Ref RDSDBName
-      MasterUsername     : !Ref RDSMasterUser
-      MasterUserPassword : !Ref RDSMasterPassword
-      Engine             : MySQL
-      MonitoringInterval : 0
-      MultiAZ            : true
-      Port               : 3306
-      PubliclyAccessible : false
-      StorageType        : gp2
-      VPCSecurityGroups  :
-        - !Ref DBSecurityGroup
-
 Parameters:
-  PrivateSubnet1:
+  WordPressPrivateSubnet1:
     Type: String
     Description   : Please enter VPC private subnet1 for SubnetGroup.
-  PrivateSubnet2:
+  WordPressPrivateSubnet2:
     Type: String
     Description   : Please enter VPC private subnet2 for SubnetGroup.
-  RDSInstanceClass:
+  WordPressRDSInstanceClass:
     Type          : String
     Default       : db.t2.small
     AllowedValues :
@@ -57,34 +31,58 @@ Parameters:
       - db.r4.8xlarge
       - db.r4.16xlarge
     Description   : Select RDS instance class.
-  RDSDBName:
+  WordPressRDSDBName:
     Type           : String
     Default        : wordpress
     MinLength      : 1
     MaxLength      : 16
     NoEcho         : true
     AllowedPattern : '[a-z]+'
-  RDSMasterUser:
+  WordPressRDSMasterUser:
     Type           : String
     Default        : admin
     MinLength      : 1
     MaxLength      : 16
     NoEcho         : true
     AllowedPattern : '[a-z]+'
-  RDSMasterPassword :
+  WordPressRDSMasterPassword :
     Type           : String
     Default        : password
     MinLength      : 8
     MaxLength      : 16
     NoEcho         : true
     AllowedPattern : '[^\/@"]+'
-  DBSecurityGroup:
+  WordPressDBSecurityGroup:
     Type: String
     Description   : Please enter VPC Security Group ID for RDS.
 
+Resources:
+  WordPressRDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "SubnetGroup for WordPress"
+      SubnetIds:
+        - !Ref WordPressPrivateSubnet1
+        - !Ref WordPressPrivateSubnet2
+  WordPressRDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage   : 20
+      DBSubnetGroupName  : !Ref WordPressRDSSubnetGroup
+      DBInstanceClass    : !Ref WordPressRDSInstanceClass
+      DBName             : !Ref WordPressRDSDBName
+      MasterUsername     : !Ref WordPressRDSMasterUser
+      MasterUserPassword : !Ref WordPressRDSMasterPassword
+      Engine             : MySQL
+      MonitoringInterval : 0
+      MultiAZ            : true
+      Port               : 3306
+      PubliclyAccessible : false
+      StorageType        : gp2
+      VPCSecurityGroups  :
+        - !Ref WordPressDBSecurityGroup
+    DeletionPolicy: Delete
+
 Outputs:
-  RDSEndpoint:
-    Value:
-      Fn::GetAtt:
-        - RDSInstance
-        - Endpoint.Address
+  WordPressRDSEndpoint:
+    Value: !GetAtt WordPressRDSInstance.Endpoint.Address
