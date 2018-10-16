@@ -36,7 +36,6 @@ Parameters:
     Default        : wordpress
     MinLength      : 1
     MaxLength      : 16
-    NoEcho         : true
     AllowedPattern : '[a-z]+'
   WordPressRDSMasterUser:
     Type           : String
@@ -74,9 +73,7 @@ Resources:
       MasterUsername     : !Ref WordPressRDSMasterUser
       MasterUserPassword : !Ref WordPressRDSMasterPassword
       Engine             : MySQL
-      MonitoringInterval : 0
       MultiAZ            : true
-      Port               : 3306
       PubliclyAccessible : false
       StorageType        : gp2
       VPCSecurityGroups  :
