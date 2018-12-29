@@ -65,7 +65,6 @@ Parameters:
     Default        : wordpress
     MinLength      : 1
     MaxLength      : 16
-    NoEcho         : true
     AllowedPattern : '[a-z]+'
   WordPressRDSMasterUser:
     Type           : String
